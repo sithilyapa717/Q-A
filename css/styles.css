@@ -3040,8 +3040,14 @@ body.host-project .host-main.diagnose-host-main.host-live {
   cursor: pointer;
 }
 
+.hint-content {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
 .hint-title {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.55rem;
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 700;
@@ -3049,25 +3055,31 @@ body.host-project .host-main.diagnose-host-main.host-live {
   color: var(--ink);
 }
 
+.hint-heading {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
 .hint-body {
-  margin: 0 0 0.85rem;
+  margin: 0;
   color: var(--ink-soft);
   font-size: 0.98rem;
   line-height: 1.45;
 }
 
 .hint-items-label {
-  margin: 0 0 0.4rem;
+  margin: 0.15rem 0 0;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: #fde68a;
 }
 
 .hint-items {
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0;
   list-style: none;
   display: grid;

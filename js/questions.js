@@ -39,15 +39,24 @@
       labels: STANDARD_LABELS,
       hint: {
         title: 'Antisocial Personality Disorder (ASPD)',
-        body: 'A long-term pattern of behaviours involving disregard for other people\'s rights, rules, and social responsibilities.',
-        itemsLabel: 'Helpful clues',
-        items: [
-          'Deceitfulness or repeated lying',
-          'Manipulation',
-          'Aggressive or reckless behaviour',
-          'Repeated violation of rules',
-          'Limited concern for the consequences to others',
-          'Usually a persistent pattern, not a few isolated incidents'
+        parts: [
+          {
+            type: 'text',
+            value:
+              "A long-term pattern of behaviours involving disregard for other people's rights, rules, and social responsibilities."
+          },
+          { type: 'label', value: 'Helpful clues:' },
+          {
+            type: 'list',
+            items: [
+              'Deceitfulness or repeated lying',
+              'Manipulation',
+              'Aggressive or reckless behaviour',
+              'Repeated violation of rules',
+              'Limited concern for the consequences to others',
+              'Usually considered as a persistent pattern rather than a few isolated incidents'
+            ]
+          }
         ]
       },
       segments: [
@@ -64,15 +73,24 @@
       labels: STANDARD_LABELS,
       hint: {
         title: 'Conduct Disorder',
-        body: 'A disorder involving a persistent pattern of serious behavioural problems in children or adolescents.',
-        itemsLabel: 'Helpful clues',
-        items: [
-          'Aggression toward people or animals',
-          'Serious rule-breaking',
-          'Destruction of property',
-          'Deceitfulness or theft',
-          'Repeatedly violating important rules or others\' rights',
-          'Occurs during childhood or adolescence'
+        parts: [
+          {
+            type: 'text',
+            value:
+              'A disorder involving a persistent pattern of serious behavioural problems in children or adolescents.'
+          },
+          { type: 'label', value: 'Helpful clues:' },
+          {
+            type: 'list',
+            items: [
+              'Aggression toward people or animals',
+              'Serious rule-breaking',
+              'Destruction of property',
+              'Deceitfulness or theft',
+              "Repeatedly violating important rules or others' rights",
+              'Occurs during childhood or adolescence'
+            ]
+          }
         ]
       },
       segments: [
@@ -91,14 +109,23 @@
       labels: STANDARD_LABELS,
       hint: {
         title: 'Adjustment Disorder',
-        body: 'A psychological reaction that develops in response to an identifiable stressful or life-changing event.',
-        itemsLabel: 'Helpful clues',
-        items: [
-          'Symptoms occur after a significant stressor',
-          'The symptoms are a change from previous functioning',
-          'Emotional or behavioural changes can occur',
-          'The timing between the stressor and symptoms matters',
-          'The response is greater than expected, or causes significant problems'
+        parts: [
+          {
+            type: 'text',
+            value:
+              'A psychological reaction that develops in response to an identifiable stressful or life-changing event.'
+          },
+          { type: 'label', value: 'Helpful clues:' },
+          {
+            type: 'list',
+            items: [
+              'Symptoms occur after a significant stressor',
+              "The symptoms represent a change from the person's previous functioning",
+              'Emotional or behavioural changes can occur',
+              'The timing between the stressor and symptoms matters',
+              "The person's response is greater than what would normally be expected or causes significant problems"
+            ]
+          }
         ]
       },
       segments: [
@@ -112,16 +139,26 @@
       labels: STANDARD_LABELS,
       hint: {
         title: 'Alcohol Intoxication',
-        body: 'A temporary state that occurs when alcohol affects the brain and behaviour.',
-        itemsLabel: 'It can involve',
-        items: [
-          'Impaired judgment',
-          'Poor decision-making',
-          'Reduced self-control',
-          'Impulsivity',
-          'Aggression or unusual behaviour',
-          'Confusion or memory problems',
-          'Changes that occur while alcohol is affecting the person'
+        parts: [
+          {
+            type: 'text',
+            value:
+              'A temporary state that occurs when alcohol affects the brain and behaviour.'
+          },
+          { type: 'label', value: 'Helpful clues:' },
+          { type: 'label', value: 'It can involve:' },
+          {
+            type: 'list',
+            items: [
+              'Impaired judgment',
+              'Poor decision-making',
+              'Reduced self-control',
+              'Impulsivity',
+              'Aggression or unusual behaviour',
+              'Confusion or memory problems',
+              'Changes that occur while alcohol is affecting the person'
+            ]
+          }
         ]
       },
       segments: [
@@ -138,11 +175,15 @@
       labels: UNDERLYING_LABELS,
       hint: {
         title: 'Severity & Impairment',
-        body: 'Use these two ideas to decide whether an underlying mental disorder is indicated.',
-        itemsLabel: 'Ask yourself',
-        items: [
-          'Severity — How intense or serious are the symptoms?',
-          'Impairment — How much are the symptoms interfering with everyday life?'
+        parts: [
+          { type: 'heading', value: 'Severity' },
+          { type: 'text', value: 'How intense or serious are the symptoms?' },
+          { type: 'heading', value: 'Impairment' },
+          {
+            type: 'text',
+            value:
+              "How much are the symptoms interfering with the person's everyday life?"
+          }
         ]
       },
       segments: [
@@ -165,14 +206,23 @@
       prompt: 'What is the MOST appropriate conclusion?',
       labels: UNDERLYING_LABELS,
       hint: {
-        title: 'Distress',
-        body: 'Does the person experience significant psychological suffering because of their symptoms?',
-        itemsLabel: 'Helpful questions',
-        items: [
-          'Are they suffering because of what is happening?',
-          'Do they feel overwhelmed or unable to cope?',
-          'Is the behaviour causing significant problems?',
-          'Is there significant interference with everyday functioning?'
+        title: '🧠 DISTRESS',
+        parts: [
+          {
+            type: 'text',
+            value:
+              'Does the person experience significant psychological suffering because of their symptoms?'
+          },
+          { type: 'label', value: 'Helpful questions:' },
+          {
+            type: 'list',
+            items: [
+              "Are they suffering because of what's happening?",
+              'Do they feel overwhelmed or unable to cope?',
+              'Is the behaviour causing significant problems?',
+              'Is there significant interference with everyday functioning?'
+            ]
+          }
         ]
       },
       segments: [

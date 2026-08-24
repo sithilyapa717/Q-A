@@ -28,9 +28,7 @@
   const hintCloseBtn = document.getElementById('hint-close-btn');
   const hintGotItBtn = document.getElementById('hint-got-it-btn');
   const hintTitleEl = document.getElementById('hint-title');
-  const hintBodyEl = document.getElementById('hint-body');
-  const hintItemsLabelEl = document.getElementById('hint-items-label');
-  const hintItemsEl = document.getElementById('hint-items');
+  const hintContentEl = document.getElementById('hint-content');
   const summaryListEl = document.getElementById('summary-list');
   const summaryTotalEl = document.getElementById('summary-total');
   const errorMessageEl = document.getElementById('error-message');
@@ -437,23 +435,51 @@
     if (hintTitleEl) {
       hintTitleEl.textContent = hint.title || 'Hint';
     }
-    if (hintBodyEl) {
-      hintBodyEl.textContent = hint.body || '';
-      hintBodyEl.classList.toggle('hidden', !hint.body);
+    if (!hintContentEl) {
+      return;
     }
-    if (hintItemsLabelEl) {
-      hintItemsLabelEl.textContent = hint.itemsLabel || '';
-      hintItemsLabelEl.classList.toggle('hidden', !hint.itemsLabel);
-    }
-    if (hintItemsEl) {
-      hintItemsEl.replaceChildren();
-      (hint.items || []).forEach((item) => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        hintItemsEl.appendChild(li);
-      });
-      hintItemsEl.classList.toggle('hidden', !hint.items || hint.items.length === 0);
-    }
+
+    hintContentEl.replaceChildren();
+    (hint.parts || []).forEach((part) => {
+      if (!part || !part.type) {
+        return;
+      }
+
+      if (part.type === 'text') {
+        const p = document.createElement('p');
+        p.className = 'hint-body';
+        p.textContent = part.value || '';
+        hintContentEl.appendChild(p);
+        return;
+      }
+
+      if (part.type === 'heading') {
+        const h = document.createElement('p');
+        h.className = 'hint-heading';
+        h.textContent = part.value || '';
+        hintContentEl.appendChild(h);
+        return;
+      }
+
+      if (part.type === 'label') {
+        const label = document.createElement('p');
+        label.className = 'hint-items-label';
+        label.textContent = part.value || '';
+        hintContentEl.appendChild(label);
+        return;
+      }
+
+      if (part.type === 'list') {
+        const list = document.createElement('ul');
+        list.className = 'hint-items';
+        (part.items || []).forEach((item) => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.appendChild(li);
+        });
+        hintContentEl.appendChild(list);
+      }
+    });
   }
 
   function openHint() {
