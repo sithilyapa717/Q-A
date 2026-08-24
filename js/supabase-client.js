@@ -82,12 +82,7 @@ function countConnectedPlayers(presenceState) {
     return 0;
   }
 
-  return Object.entries(presenceState).reduce((total, [key, presences]) => {
-    if (key === 'host') {
-      return total;
-    }
-    return total + (Array.isArray(presences) ? presences.length : 0);
-  }, 0);
+  return Object.keys(presenceState).filter((key) => key && key !== 'host').length;
 }
 
 function onPlayerCountChange(channel, handler) {
@@ -206,11 +201,36 @@ async function broadcastAnswerLocked(channel, playerId, questionIndex) {
   const status = await channel.send({
     type: 'broadcast',
     event: 'answer-locked',
-    payload: { playerId, questionIndex }
+    payload: {
+      playerId: String(playerId || ''),
+      questionIndex: Number(questionIndex)
+    }
   });
 
   if (status !== 'ok') {
     throw new Error('Could not lock in your answer. Check your connection.');
+  }
+}
+
+function onChangeSummary(channel, handler) {
+  channel.on('broadcast', { event: 'change-summary' }, ({ payload }) => {
+    handler(payload);
+  });
+}
+
+async function broadcastChangeSummary(channel, playerId, totalChanges, questionIndex) {
+  const status = await channel.send({
+    type: 'broadcast',
+    event: 'change-summary',
+    payload: {
+      playerId: String(playerId || ''),
+      totalChanges: Math.max(0, Math.round(Number(totalChanges) || 0)),
+      questionIndex: Number(questionIndex) || 0
+    }
+  });
+
+  if (status !== 'ok') {
+    throw new Error('Could not send change summary.');
   }
 }
 
@@ -228,10 +248,12 @@ window.Diagnose = {
   broadcastPlayerHello,
   broadcastQuestionUpdate,
   broadcastAnswerLocked,
+  broadcastChangeSummary,
   onSessionEnd,
   onSessionStart,
   onPlayerHello,
   onQuestionUpdate,
   onAnswerLocked,
+  onChangeSummary,
   onPlayerCountChange
 };

@@ -11,7 +11,7 @@ A host/participant web app for the **"Can You Diagnose Me?"** classroom activity
 5. Host taps **Next question** to reveal the next clue (highlighted on phones).
 6. After Question 6 is locked, each participant sees only their own change history.
 
-**Privacy:** Answer choices and change history never leave the participant's browser. The host only receives lock acknowledgments (`playerId` + question index) and a lock count.
+**Privacy:** Full change history stays on the participant's phone. At the end, the host sees **aggregated** answer letters (A–E) per question so the room can watch how diagnoses shifted. Individual phones still show only their own path.
 
 ## Prerequisites
 

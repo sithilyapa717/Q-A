@@ -72,11 +72,20 @@
     <section id="question-section" class="diagnose-project-stage hidden">
       <div class="diagnose-project-meta">
         <p id="question-indicator" class="diagnose-project-qnum">Question 1 of 6</p>
-        <p id="lock-count" class="diagnose-project-locks" aria-live="polite">Locked in 0 / 0</p>
+        <div class="diagnose-host-corner">
+          <p id="lock-count" class="diagnose-project-locks" aria-live="polite">Locked in 0 / 0</p>
+          <button type="button" id="toggle-results-btn" class="btn-reveal-avg" aria-pressed="false">
+            Reveal average
+          </button>
+          <p id="avg-reveal" class="diagnose-project-avg hidden" aria-live="polite">
+            <span class="diagnose-avg-label">Average changes</span>
+            <strong id="avg-changes">—</strong>
+          </p>
+        </div>
         <p id="live-player-count" class="hidden" aria-hidden="true">0</p>
       </div>
 
-      <div class="diagnose-project-body">
+      <div class="diagnose-project-body" id="project-body">
         <div id="question-preview" class="diagnose-project-case"></div>
 
         <div class="diagnose-project-ask">

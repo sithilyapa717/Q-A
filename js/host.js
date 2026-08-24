@@ -17,6 +17,7 @@
   const prevQuestionBtn = document.getElementById('prev-question-btn');
   const nextQuestionBtn = document.getElementById('next-question-btn');
   const resendQuestionBtn = document.getElementById('resend-question-btn');
+  const toggleResultsBtn = document.getElementById('toggle-results-btn');
   const questionJumpEl = document.getElementById('question-jump');
   const roomCodeEl = document.getElementById('room-code');
   const qrCodeEl = document.getElementById('qr-code');
@@ -36,6 +37,8 @@
   const questionPromptDisplayEl = document.getElementById('question-prompt-display');
   const projectOptionsEl = document.getElementById('project-options');
   const questionStatusEl = document.getElementById('question-status');
+  const avgRevealEl = document.getElementById('avg-reveal');
+  const avgChangesEl = document.getElementById('avg-changes');
   const errorMessageEl = document.getElementById('error-message');
   const hostTopbar = document.getElementById('host-topbar');
 
@@ -45,9 +48,12 @@
   let sessionLive = false;
   let currentQuestionIndex = 0;
   let playerCount = 0;
-  let lockedPlayerIds = new Set();
+  let locksByQuestion = new Map();
+  let playerChanges = new Map();
   let sessionPulseTimer = null;
+  let sessionPulseBusy = false;
   let navigating = false;
+  let resultsVisible = false;
 
   function showError(message) {
     errorMessageEl.textContent = message;
@@ -244,12 +250,119 @@
     updateLockCountDisplay();
   }
 
+  function locksForQuestion(questionIndex) {
+    const key = Number(questionIndex);
+    let locked = locksByQuestion.get(key);
+    if (!locked) {
+      locked = new Set();
+      locksByQuestion.set(key, locked);
+    }
+    return locked;
+  }
+
   function updateLockCountDisplay() {
-    lockCountEl.textContent = `Locked in ${lockedPlayerIds.size} / ${playerCount}`;
+    const locked = locksForQuestion(currentQuestionIndex);
+    lockCountEl.textContent = `Locked in ${locked.size} / ${playerCount}`;
+    if (resultsVisible) {
+      updateHostResults();
+    }
+  }
+
+  function unwrapBroadcast(raw) {
+    if (!raw || typeof raw !== 'object') {
+      return {};
+    }
+    if (raw.payload && typeof raw.payload === 'object' && (raw.payload.playerId || raw.payload.questionIndex != null)) {
+      return { ...raw, ...raw.payload };
+    }
+    return raw;
+  }
+
+  function recordAnswerLocked(raw) {
+    const payload = unwrapBroadcast(raw);
+    const playerId = String(payload.playerId || '').trim();
+    if (!playerId) {
+      return;
+    }
+
+    const questionIndex = Number(payload.questionIndex);
+    const q = Number.isFinite(questionIndex) && questionIndex > 0
+      ? questionIndex
+      : currentQuestionIndex;
+
+    locksForQuestion(q).add(playerId);
+    if (q === Number(currentQuestionIndex)) {
+      updateLockCountDisplay();
+    }
+  }
+
+  function formatAverage(value) {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  }
+
+  function updateHostResults() {
+    if (!avgChangesEl) {
+      return;
+    }
+
+    const totals = [...playerChanges.values()];
+    const participants = Math.max(playerCount, totals.length);
+    if (!participants) {
+      avgChangesEl.textContent = '—';
+      return;
+    }
+
+    const sum = totals.reduce((acc, value) => acc + value, 0);
+    avgChangesEl.textContent = formatAverage(sum / participants);
+  }
+
+  function applyResultsVisibility() {
+    if (avgRevealEl) {
+      avgRevealEl.classList.toggle('hidden', !resultsVisible);
+    }
+    if (toggleResultsBtn) {
+      toggleResultsBtn.textContent = resultsVisible ? 'Hide average' : 'Reveal average';
+      toggleResultsBtn.setAttribute('aria-pressed', resultsVisible ? 'true' : 'false');
+      toggleResultsBtn.classList.toggle('is-revealed', resultsVisible);
+    }
+    if (resultsVisible) {
+      updateHostResults();
+    }
+  }
+
+  function toggleResults() {
+    resultsVisible = !resultsVisible;
+    applyResultsVisibility();
+  }
+
+  function recordChangeSummary(raw) {
+    const payload = unwrapBroadcast(raw);
+    const playerId = String(payload.playerId || '').trim();
+    if (!playerId) {
+      return;
+    }
+    const count = Number(payload.totalChanges);
+    if (!Number.isFinite(count) || count < 0) {
+      return;
+    }
+    playerChanges.set(playerId, Math.round(count));
+
+    const questionIndex = Number(payload.questionIndex);
+    if (Number.isFinite(questionIndex) && questionIndex > 0) {
+      locksForQuestion(questionIndex).add(playerId);
+      if (questionIndex === Number(currentQuestionIndex)) {
+        updateLockCountDisplay();
+      }
+    }
+
+    if (resultsVisible) {
+      updateHostResults();
+    }
   }
 
   function resetLocksForQuestion() {
-    lockedPlayerIds = new Set();
+    locksByQuestion.set(Number(currentQuestionIndex), new Set());
     updateLockCountDisplay();
   }
 
@@ -334,10 +447,9 @@
     nextQuestionBtn.disabled = navigating || isLast;
     nextQuestionBtn.textContent = isLast ? 'Last question' : 'Next →';
     resendQuestionBtn.disabled = navigating;
+    applyResultsVisibility();
 
-    questionStatusEl.textContent = isLast
-      ? 'Last question — end when discussion is done.'
-      : '';
+    questionStatusEl.textContent = isLast ? 'Last question' : '';
   }
 
   async function sendCurrentQuestion() {
@@ -357,9 +469,10 @@
   }
 
   async function notifySessionLive() {
-    if (!channel || !sessionLive) {
+    if (!channel || !sessionLive || sessionPulseBusy) {
       return;
     }
+    sessionPulseBusy = true;
     try {
       await Diagnose.broadcastSessionStart(channel, {
         questionIndex: currentQuestionIndex
@@ -369,6 +482,8 @@
       }
     } catch {
       /* best effort */
+    } finally {
+      sessionPulseBusy = false;
     }
   }
 
@@ -385,7 +500,7 @@
     sessionPulseTimer = setInterval(notifySessionLive, SESSION_PULSE_MS);
   }
 
-  async function goToQuestion(index, { resetLocks = true } = {}) {
+  async function goToQuestion(index, { resetLocks = false } = {}) {
     clearError();
     if (!channel || !sessionLive || navigating) {
       return;
@@ -431,7 +546,11 @@
     try {
       sessionLive = true;
       currentQuestionIndex = 1;
+      locksByQuestion = new Map();
       resetLocksForQuestion();
+      playerChanges = new Map();
+      resultsVisible = false;
+      applyResultsVisibility();
       renderJumpButtons();
       await Diagnose.broadcastSessionStart(channel, {
         questionIndex: currentQuestionIndex
@@ -497,6 +616,13 @@
       showError(error.message || 'Could not end session for everyone.');
     }
 
+    if (sessionLive || playerChanges.size > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      if (resultsVisible) {
+        updateHostResults();
+      }
+    }
+
     try {
       await Diagnose.untrackPresence(channel);
       await channel.unsubscribe();
@@ -507,7 +633,7 @@
     channel = null;
     sessionLive = false;
     currentQuestionIndex = 0;
-    lockedPlayerIds = new Set();
+    locksByQuestion = new Map();
     sessionStatusEl.textContent = 'Session ended';
     questionStatusEl.textContent = 'Session ended. Refresh to create a new room.';
     startSessionBtn.disabled = true;
@@ -571,17 +697,9 @@
       channel = await Diagnose.joinRoomChannel(supabase, roomCode, {
         presenceKey: 'host',
         onSetup(ch) {
-          Diagnose.onAnswerLocked(ch, (payload) => {
-            if (
-              !payload ||
-              payload.questionIndex !== currentQuestionIndex ||
-              !payload.playerId
-            ) {
-              return;
-            }
-            lockedPlayerIds.add(payload.playerId);
-            updateLockCountDisplay();
-          });
+          Diagnose.onAnswerLocked(ch, recordAnswerLocked);
+
+          Diagnose.onChangeSummary(ch, recordChangeSummary);
 
           Diagnose.onPlayerHello(ch, () => {
             notifySessionLive();
@@ -619,6 +737,9 @@
   prevQuestionBtn.addEventListener('click', () => goToQuestion(currentQuestionIndex - 1));
   nextQuestionBtn.addEventListener('click', () => goToQuestion(currentQuestionIndex + 1));
   resendQuestionBtn.addEventListener('click', resendQuestion);
+  if (toggleResultsBtn) {
+    toggleResultsBtn.addEventListener('click', toggleResults);
+  }
   zoomQrBtn.addEventListener('click', openQrZoom);
   closeQrZoomBtn.addEventListener('click', closeQrZoom);
   downloadQrBtn.addEventListener('click', downloadQrCode);

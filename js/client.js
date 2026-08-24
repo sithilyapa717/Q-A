@@ -4,6 +4,8 @@
   const STATE_PREFIX = 'diagnose_state_';
   const HELLO_INTERVAL_MS = 5000;
 
+  let cachedPlayerId = '';
+
   const joinSection = document.getElementById('join-section');
   const waitingSection = document.getElementById('waiting-section');
   const waitingMessageEl = document.getElementById('waiting-message');
@@ -20,6 +22,15 @@
   const questionPromptEl = document.getElementById('question-prompt');
   const answerOptionsEl = document.getElementById('answer-options');
   const lockBtn = document.getElementById('lock-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const hintSheet = document.getElementById('hint-sheet');
+  const hintBackdrop = document.getElementById('hint-backdrop');
+  const hintCloseBtn = document.getElementById('hint-close-btn');
+  const hintGotItBtn = document.getElementById('hint-got-it-btn');
+  const hintTitleEl = document.getElementById('hint-title');
+  const hintBodyEl = document.getElementById('hint-body');
+  const hintItemsLabelEl = document.getElementById('hint-items-label');
+  const hintItemsEl = document.getElementById('hint-items');
   const summaryListEl = document.getElementById('summary-list');
   const summaryTotalEl = document.getElementById('summary-total');
   const errorMessageEl = document.getElementById('error-message');
@@ -149,13 +160,29 @@
   }
 
   function getPlayerId() {
-    let playerId = localStorage.getItem(PLAYER_ID_KEY);
-    if (!playerId) {
-      const suffix = Math.random().toString(36).slice(2, 6);
-      playerId = `player-${suffix}`;
-      localStorage.setItem(PLAYER_ID_KEY, playerId);
+    if (cachedPlayerId) {
+      return cachedPlayerId;
     }
-    return playerId;
+
+    try {
+      cachedPlayerId = sessionStorage.getItem(PLAYER_ID_KEY) || '';
+    } catch {
+      cachedPlayerId = '';
+    }
+
+    if (!cachedPlayerId) {
+      cachedPlayerId =
+        (window.crypto && typeof window.crypto.randomUUID === 'function'
+          ? window.crypto.randomUUID()
+          : `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+      try {
+        sessionStorage.setItem(PLAYER_ID_KEY, cachedPlayerId);
+      } catch {
+        /* keep in-memory id */
+      }
+    }
+
+    return cachedPlayerId;
   }
 
   function normalizeRoomCode(value) {
@@ -168,6 +195,7 @@
   }
 
   function hideAllSections() {
+    closeHint();
     joinSection.classList.add('hidden');
     waitingSection.classList.add('hidden');
     questionSection.classList.add('hidden');
@@ -394,15 +422,86 @@
     questionSection.classList.remove('hidden');
   }
 
+  function fillHint(questionIndex) {
+    const hint = DiagnoseQuestions.getHint(questionIndex);
+    if (!hintBtn) {
+      return;
+    }
+    if (!hint) {
+      hintBtn.classList.add('hidden');
+      closeHint();
+      return;
+    }
+
+    hintBtn.classList.remove('hidden');
+    if (hintTitleEl) {
+      hintTitleEl.textContent = hint.title || 'Hint';
+    }
+    if (hintBodyEl) {
+      hintBodyEl.textContent = hint.body || '';
+      hintBodyEl.classList.toggle('hidden', !hint.body);
+    }
+    if (hintItemsLabelEl) {
+      hintItemsLabelEl.textContent = hint.itemsLabel || '';
+      hintItemsLabelEl.classList.toggle('hidden', !hint.itemsLabel);
+    }
+    if (hintItemsEl) {
+      hintItemsEl.replaceChildren();
+      (hint.items || []).forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        hintItemsEl.appendChild(li);
+      });
+      hintItemsEl.classList.toggle('hidden', !hint.items || hint.items.length === 0);
+    }
+  }
+
+  function openHint() {
+    if (!hintSheet || hintBtn?.classList.contains('hidden')) {
+      return;
+    }
+    hintSheet.classList.remove('hidden');
+    hintSheet.hidden = false;
+    document.body.classList.add('hint-open');
+    if (hintBtn) {
+      hintBtn.setAttribute('aria-expanded', 'true');
+      hintBtn.classList.add('is-open');
+    }
+    if (hintCloseBtn) {
+      hintCloseBtn.focus();
+    }
+  }
+
+  function closeHint() {
+    if (!hintSheet) {
+      return;
+    }
+    hintSheet.classList.add('hidden');
+    hintSheet.hidden = true;
+    document.body.classList.remove('hint-open');
+    if (hintBtn) {
+      hintBtn.setAttribute('aria-expanded', 'false');
+      hintBtn.classList.remove('is-open');
+    }
+  }
+
+  function toggleHint() {
+    if (hintSheet && !hintSheet.hidden) {
+      closeHint();
+    } else {
+      openHint();
+    }
+  }
+
   function applyQuestion(payload) {
-    if (!payload || typeof payload.index !== 'number') {
+    const incomingIndex = Number(payload && payload.index);
+    if (!Number.isFinite(incomingIndex) || incomingIndex < 1) {
       return;
     }
 
     activateSession();
 
     const previousIndex = state.lastQuestionIndex;
-    const incomingIndex = payload.index;
 
     // Host resends the same question on a timer — don't reset the answering UI
     if (
@@ -453,6 +552,8 @@
     questionPromptEl.textContent = payload.prompt || '';
     renderCaseText(payload.segments);
     renderAnswerOptions(payload);
+    fillHint(incomingIndex);
+    closeHint();
 
     if (isLocked) {
       lockBtn.textContent = 'Answer locked';
@@ -486,6 +587,43 @@
     }
     const log = state.changeLog[key] || [];
     return log.length ? log[log.length - 1] : null;
+  }
+
+  function computeTotalChanges() {
+    const totalQuestions = DiagnoseQuestions.getQuestionCount();
+    let withinChanges = 0;
+    let crossChanges = 0;
+
+    for (let i = 1; i <= totalQuestions; i += 1) {
+      const log = state.changeLog[String(i)] || [];
+      withinChanges += countChanges(log);
+
+      if (i > 1) {
+        const prev = getFinalAnswer(i - 1);
+        const finalAnswer = getFinalAnswer(i);
+        if (prev && finalAnswer && prev !== finalAnswer) {
+          crossChanges += 1;
+        }
+      }
+    }
+
+    return withinChanges + crossChanges;
+  }
+
+  async function sendChangeSummary() {
+    if (!channel || !roomConnected) {
+      return;
+    }
+    try {
+      await Diagnose.broadcastChangeSummary(
+        channel,
+        getPlayerId(),
+        computeTotalChanges(),
+        currentQuestion ? Number(currentQuestion.index) : 0
+      );
+    } catch {
+      /* host may already have ended */
+    }
   }
 
   function buildJourney(sequence, labels, { showQuestionTags = false } = {}) {
@@ -540,7 +678,7 @@
     return journey;
   }
 
-  function showSummary() {
+  async function showSummary() {
     showingSummary = true;
     hideAllSections();
     hideDisconnectMessage();
@@ -553,29 +691,16 @@
     summaryListEl.replaceChildren();
 
     const totalQuestions = DiagnoseQuestions.getQuestionCount();
-    let withinChanges = 0;
-    let crossChanges = 0;
     const finals = [];
 
     for (let i = 1; i <= totalQuestions; i += 1) {
-      const indexKey = String(i);
-      const log = state.changeLog[indexKey] || [];
       const finalAnswer = getFinalAnswer(i);
-      withinChanges += countChanges(log);
-
       if (finalAnswer) {
         finals.push({ key: finalAnswer, tag: `Q${i}` });
       }
-
-      if (i > 1) {
-        const prev = getFinalAnswer(i - 1);
-        if (prev && finalAnswer && prev !== finalAnswer) {
-          crossChanges += 1;
-        }
-      }
     }
 
-    const totalChanges = withinChanges + crossChanges;
+    const totalChanges = computeTotalChanges();
 
     const pathItem = document.createElement('li');
     pathItem.className = 'diagnose-summary-item diagnose-summary-overall';
@@ -633,6 +758,8 @@
         : totalChanges === 1
           ? 'You changed your answer 1 time.'
           : `You changed your answer ${totalChanges} times.`;
+
+    await sendChangeSummary();
   }
 
   async function lockInAnswer() {
@@ -644,7 +771,7 @@
     lockBtn.disabled = true;
     lockBtn.textContent = 'Locking…';
 
-    const questionIndex = currentQuestion.index;
+    const questionIndex = Number(currentQuestion.index);
 
     try {
       await Diagnose.broadcastAnswerLocked(channel, getPlayerId(), questionIndex);
@@ -652,11 +779,12 @@
       commitQuestionAnswer(questionIndex, currentSelection);
       updateOptionSelectionUi();
       lockBtn.textContent = 'Answer locked';
+      await sendChangeSummary();
 
       const total = DiagnoseQuestions.getQuestionCount();
       if (questionIndex >= total) {
         lockStatusEl.textContent = 'Answer locked';
-        showSummary();
+        await showSummary();
       } else {
         lockStatusEl.textContent = 'Answer locked — waiting for next question';
       }
@@ -732,13 +860,18 @@
             applyQuestion(payload);
           });
 
-          Diagnose.onSessionEnd(ch, () => {
+          Diagnose.onSessionEnd(ch, async () => {
             markRoomEnded(roomCode);
-            leaveChannel();
-            if (showingSummary || Object.keys(state.lockedAnswers).length > 0) {
-              showSummary();
+            const hasAnswers =
+              showingSummary ||
+              Object.keys(state.lockedAnswers).length > 0 ||
+              Boolean(currentSelection);
+            if (hasAnswers) {
+              await showSummary();
+              await leaveChannel();
               return;
             }
+            await leaveChannel();
             showDisconnectOverlay(
               'Session ended',
               'The host ended this session.',
@@ -788,6 +921,24 @@
   });
 
   lockBtn.addEventListener('click', lockInAnswer);
+
+  if (hintBtn) {
+    hintBtn.addEventListener('click', toggleHint);
+  }
+  if (hintBackdrop) {
+    hintBackdrop.addEventListener('click', closeHint);
+  }
+  if (hintCloseBtn) {
+    hintCloseBtn.addEventListener('click', closeHint);
+  }
+  if (hintGotItBtn) {
+    hintGotItBtn.addEventListener('click', closeHint);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeHint();
+    }
+  });
 
   disconnectRetryBtn.addEventListener('click', () => {
     hideDisconnectMessage();
