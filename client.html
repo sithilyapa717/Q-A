@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Diagnose — Participant</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="page play-page client-page">
+  <script src="/js/bg.js"></script>
+  <main class="play-main client-main">
+    <section id="join-section" class="card hidden">
+      <header class="page-header">
+        <a class="back-link" href="/">← Home</a>
+        <span class="page-badge badge-play">Participant</span>
+        <h1>Join in</h1>
+        <p class="subtitle">Type the code from the host screen</p>
+      </header>
+      <form id="join-form" novalidate>
+        <label for="room-input">Room code</label>
+        <input
+          id="room-input"
+          type="text"
+          maxlength="6"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="K7M2XP"
+          aria-describedby="join-field-error"
+        >
+        <p id="join-field-error" class="field-error hidden" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-lg">Let's go</button>
+      </form>
+    </section>
+
+    <section id="waiting-section" class="waiting-section hidden">
+      <div class="waiting-card card">
+        <p class="waiting-title">Waiting for host</p>
+        <p id="waiting-message" class="waiting-message">The host hasn't started the session yet.</p>
+        <p id="waiting-room-code" class="waiting-room-code"></p>
+      </div>
+    </section>
+
+    <section id="question-section" class="diagnose-question-section hidden">
+      <div class="diagnose-question-shell">
+        <div class="diagnose-progress" aria-label="Question progress">
+          <div id="progress-steps" class="diagnose-progress-steps"></div>
+          <p id="question-badge" class="diagnose-progress-label">Question 1 of 6</p>
+        </div>
+
+        <div class="diagnose-question-card card">
+          <div id="case-text" class="diagnose-case-text"></div>
+
+          <p id="question-prompt" class="diagnose-prompt"></p>
+
+          <div id="answer-options" class="diagnose-answer-options" role="group" aria-label="Answer options"></div>
+        </div>
+
+        <div class="diagnose-lock-bar">
+          <p id="lock-status" class="diagnose-lock-status" aria-live="polite"></p>
+          <button type="button" id="lock-btn" class="btn btn-success btn-lg diagnose-lock-btn" disabled>
+            Lock in answer
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="summary-section" class="diagnose-summary-section hidden">
+      <div class="diagnose-summary-card card">
+        <header class="page-header">
+          <span class="page-badge badge-play">Your results</span>
+          <h1>How your answers changed</h1>
+          <p class="subtitle">Only you can see this</p>
+        </header>
+
+        <p id="summary-total" class="diagnose-summary-total-copy"></p>
+
+        <ul id="summary-list" class="diagnose-summary-list"></ul>
+      </div>
+    </section>
+
+    <div id="disconnect-overlay" class="disconnect-overlay hidden" role="alert" aria-live="assertive">
+      <div class="disconnect-card">
+        <p id="disconnect-title" class="disconnect-title">Disconnected</p>
+        <p id="disconnect-message" class="disconnect-message"></p>
+        <button type="button" id="disconnect-retry-btn" class="btn btn-secondary disconnect-retry hidden">Try again</button>
+      </div>
+    </div>
+
+    <p id="error-message" class="error-message hidden" role="alert"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/questions.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/client.js"></script>
+</body>
+</html>

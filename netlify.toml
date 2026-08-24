@@ -1,0 +1,16 @@
+[build]
+  command = "node scripts/generate-config.js"
+  publish = "."
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/host"
+  to = "/host.html"
+  status = 200
+
+[[redirects]]
+  from = "/client"
+  to = "/client.html"
+  status = 200

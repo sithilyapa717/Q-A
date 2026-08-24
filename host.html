@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Diagnose — Host</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="page host-page host-project">
+  <script src="/js/bg.js"></script>
+  <main class="host-main diagnose-host-main" id="host-main">
+    <header class="page-header host-header diagnose-host-topbar" id="host-topbar">
+      <a class="back-link" href="/">← Home</a>
+      <span class="page-badge">Host</span>
+      <h1>Can You Diagnose Me?</h1>
+      <p class="subtitle">Projected for the room · phones answer separately</p>
+    </header>
+
+    <section id="setup-section" class="card">
+      <h2 class="card-title">New session</h2>
+      <form id="host-setup-form" novalidate>
+        <div id="password-field" class="host-field">
+          <label for="host-password">Host password</label>
+          <input
+            id="host-password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter host password"
+            aria-describedby="host-field-error"
+          >
+          <p id="host-field-error" class="field-error hidden" role="alert"></p>
+        </div>
+        <button type="submit" id="create-room-btn" class="btn btn-primary btn-lg">
+          Create room
+        </button>
+      </form>
+    </section>
+
+    <section id="room-section" class="card card-room diagnose-lobby hidden">
+      <div class="diagnose-lobby-layout">
+        <div class="diagnose-lobby-join">
+          <p class="label">Join on your phone</p>
+          <p id="room-code" class="room-code diagnose-lobby-code"></p>
+          <div class="player-count-block" aria-live="polite">
+            <span class="label">Connected</span>
+            <span id="player-count" class="player-count">0</span>
+          </div>
+          <div class="session-controls diagnose-lobby-actions">
+            <button type="button" id="start-session-btn" class="btn btn-success btn-lg">
+              Start session
+            </button>
+            <button type="button" id="end-session-btn" class="btn btn-end btn-lg">
+              End session
+            </button>
+          </div>
+          <p id="session-status" class="status-text">Tap Start when everyone has joined</p>
+        </div>
+
+        <div class="diagnose-lobby-qr">
+          <p class="label qr-label">Scan to join</p>
+          <div class="qr-block qr-block-large">
+            <img id="qr-code" alt="QR code to join as participant" width="360" height="360">
+          </div>
+          <div class="qr-actions">
+            <button type="button" id="zoom-qr-btn" class="btn btn-qr-download">Zoom in</button>
+            <button type="button" id="download-qr-btn" class="btn btn-qr-download">Download QR</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="question-section" class="diagnose-project-stage hidden">
+      <div class="diagnose-project-meta">
+        <p id="question-indicator" class="diagnose-project-qnum">Question 1 of 6</p>
+        <p id="lock-count" class="diagnose-project-locks" aria-live="polite">Locked in 0 / 0</p>
+        <p id="live-player-count" class="hidden" aria-hidden="true">0</p>
+      </div>
+
+      <div class="diagnose-project-body">
+        <div id="question-preview" class="diagnose-project-case"></div>
+
+        <div class="diagnose-project-ask">
+          <p id="question-prompt-display" class="diagnose-project-prompt"></p>
+          <ul id="project-options" class="diagnose-project-options"></ul>
+        </div>
+      </div>
+
+      <div class="diagnose-project-controls">
+        <div class="diagnose-nav-row diagnose-nav-main">
+          <button type="button" id="prev-question-btn" class="btn btn-secondary btn-lg">← Previous</button>
+          <button type="button" id="next-question-btn" class="btn btn-primary btn-lg">Next →</button>
+        </div>
+        <div id="question-jump" class="diagnose-jump" role="group" aria-label="Jump to question"></div>
+        <div class="diagnose-nav-row diagnose-nav-secondary">
+          <button type="button" id="resend-question-btn" class="btn btn-secondary">Resend</button>
+          <button type="button" id="end-session-btn-2" class="btn btn-end">End session</button>
+        </div>
+        <p id="question-status" class="status-text"></p>
+      </div>
+    </section>
+
+    <p id="error-message" class="error-message hidden" role="alert"></p>
+  </main>
+
+  <div
+    id="qr-zoom-overlay"
+    class="qr-zoom-overlay hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="qr-zoom-title"
+    hidden
+  >
+    <div class="qr-zoom-card">
+      <button type="button" id="close-qr-zoom-btn" class="qr-zoom-close" aria-label="Close zoom view">×</button>
+      <div class="qr-zoom-layout">
+        <div class="qr-zoom-qr">
+          <img id="qr-zoom-image" alt="QR code to join as participant" width="560" height="560">
+        </div>
+        <div class="qr-zoom-code-panel">
+          <p id="qr-zoom-title" class="label">Room code</p>
+          <div id="qr-zoom-room-code" class="qr-zoom-room-code" aria-label="Room code"></div>
+          <p class="qr-zoom-hint">Scan or enter on the participant screen</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/questions.js"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/host.js"></script>
+</body>
+</html>

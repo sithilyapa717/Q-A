@@ -1,0 +1,6 @@
+# Local config with real keys (optional — copy from config.example.js)
+js/config.js
+
+# OS
+.DS_Store
+Thumbs.db

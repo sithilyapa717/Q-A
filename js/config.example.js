@@ -1,0 +1,6 @@
+window.DIAGNOSE_CONFIG = {
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
+  SUPABASE_ANON_KEY: 'YOUR_ANON_KEY',
+  HOST_PASSWORD: 'eggsalad123',
+  PUBLIC_BASE_URL: 'http://YOUR_LAN_IP:3000'
+};
