@@ -73,6 +73,10 @@
       labels: STANDARD_LABELS,
       hint: {
         title: 'Conduct Disorder',
+        notice: {
+          title: '⚠️ Important age consideration',
+          body: 'Antisocial Personality Disorder cannot be diagnosed before age 18.'
+        },
         parts: [
           {
             type: 'text',

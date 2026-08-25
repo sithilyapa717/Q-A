@@ -28,7 +28,9 @@
   const hintCloseBtn = document.getElementById('hint-close-btn');
   const hintGotItBtn = document.getElementById('hint-got-it-btn');
   const hintTitleEl = document.getElementById('hint-title');
+  const hintNoticeEl = document.getElementById('hint-notice');
   const hintContentEl = document.getElementById('hint-content');
+  const hintSheetCard = document.querySelector('.hint-sheet-card');
   const summaryListEl = document.getElementById('summary-list');
   const summaryTotalEl = document.getElementById('summary-total');
   const errorMessageEl = document.getElementById('error-message');
@@ -435,6 +437,22 @@
     if (hintTitleEl) {
       hintTitleEl.textContent = hint.title || 'Hint';
     }
+    if (hintNoticeEl) {
+      hintNoticeEl.replaceChildren();
+      if (hint.notice) {
+        const noticeTitle = document.createElement('p');
+        noticeTitle.className = 'hint-notice-title';
+        noticeTitle.textContent = hint.notice.title || '';
+        const noticeBody = document.createElement('p');
+        noticeBody.className = 'hint-notice-body';
+        noticeBody.textContent = hint.notice.body || '';
+        hintNoticeEl.appendChild(noticeTitle);
+        hintNoticeEl.appendChild(noticeBody);
+        hintNoticeEl.classList.remove('hidden');
+      } else {
+        hintNoticeEl.classList.add('hidden');
+      }
+    }
     if (!hintContentEl) {
       return;
     }
@@ -482,10 +500,22 @@
     });
   }
 
+  function resetHintSheetPosition() {
+    if (!hintSheetCard) {
+      return;
+    }
+    hintSheetCard.style.transition = '';
+    hintSheetCard.style.transform = '';
+    if (hintSheet) {
+      hintSheet.style.setProperty('--hint-drag', '0px');
+    }
+  }
+
   function openHint() {
     if (!hintSheet || hintBtn?.classList.contains('hidden')) {
       return;
     }
+    resetHintSheetPosition();
     hintSheet.classList.remove('hidden');
     hintSheet.hidden = false;
     document.body.classList.add('hint-open');
@@ -505,10 +535,99 @@
     hintSheet.classList.add('hidden');
     hintSheet.hidden = true;
     document.body.classList.remove('hint-open');
+    resetHintSheetPosition();
     if (hintBtn) {
       hintBtn.setAttribute('aria-expanded', 'false');
       hintBtn.classList.remove('is-open');
     }
+  }
+
+  function setupHintSwipe() {
+    if (!hintSheetCard) {
+      return;
+    }
+
+    let startY = 0;
+    let currentY = 0;
+    let dragging = false;
+    let startedOnHandle = false;
+
+    function isFromHandle(target) {
+      return Boolean(
+        target &&
+          (target.classList?.contains('hint-sheet-handle') ||
+            target.classList?.contains('hint-sheet-head') ||
+            target.classList?.contains('hint-sheet-kicker') ||
+            target.closest?.('.hint-sheet-handle') ||
+            target.closest?.('.hint-sheet-head'))
+      );
+    }
+
+    function onTouchStart(event) {
+      if (!event.touches || event.touches.length !== 1) {
+        return;
+      }
+      startY = event.touches[0].clientY;
+      currentY = startY;
+      startedOnHandle = isFromHandle(event.target);
+      dragging = startedOnHandle || hintSheetCard.scrollTop <= 0;
+      hintSheetCard.style.transition = 'none';
+    }
+
+    function onTouchMove(event) {
+      if (!dragging || !event.touches || event.touches.length !== 1) {
+        return;
+      }
+
+      currentY = event.touches[0].clientY;
+      const delta = currentY - startY;
+
+      if (!startedOnHandle && hintSheetCard.scrollTop > 0 && delta > 0) {
+        dragging = false;
+        hintSheetCard.style.transform = '';
+        return;
+      }
+
+      if (delta <= 0) {
+        hintSheetCard.style.transform = '';
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      hintSheetCard.style.transform = `translateY(${delta}px)`;
+    }
+
+    function onTouchEnd() {
+      if (!dragging) {
+        return;
+      }
+
+      const delta = currentY - startY;
+      dragging = false;
+      hintSheetCard.style.transition = 'transform 0.22s ease-out';
+
+      if (delta > 90) {
+        hintSheetCard.style.transform = 'translateY(110%)';
+        window.setTimeout(() => {
+          closeHint();
+        }, 180);
+        return;
+      }
+
+      hintSheetCard.style.transform = '';
+      window.setTimeout(() => {
+        if (hintSheetCard) {
+          hintSheetCard.style.transition = '';
+        }
+      }, 220);
+    }
+
+    hintSheetCard.addEventListener('touchstart', onTouchStart, { passive: true });
+    hintSheetCard.addEventListener('touchmove', onTouchMove, { passive: false });
+    hintSheetCard.addEventListener('touchend', onTouchEnd);
+    hintSheetCard.addEventListener('touchcancel', onTouchEnd);
   }
 
   function toggleHint() {
@@ -960,6 +1079,7 @@
   if (hintGotItBtn) {
     hintGotItBtn.addEventListener('click', closeHint);
   }
+  setupHintSwipe();
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeHint();

@@ -2992,6 +2992,8 @@ body.host-project .host-main.diagnose-host-main.host-live {
   border-radius: 1.35rem 1.35rem 0 0;
   background: #121218;
   box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.45);
+  touch-action: pan-y;
+  will-change: transform;
 }
 
 .hint-sheet-handle {
@@ -3000,6 +3002,31 @@ body.host-project .host-main.diagnose-host-main.host-live {
   margin: 0.2rem auto 0.7rem;
   border-radius: 999px;
   background: rgba(251, 191, 36, 0.45);
+  touch-action: none;
+}
+
+.hint-notice {
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.9rem;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.hint-notice-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fde68a;
+}
+
+.hint-notice-body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--ink);
 }
 
 .hint-sheet-head {
